@@ -40,7 +40,7 @@ type JoystickImpl struct {
 	mutex       sync.RWMutex
 }
 
-func OpenJoystick(id int) (Joystick, error) {
+func Open(id int) (Joystick, error) {
 	f, err := os.OpenFile(fmt.Sprintf("/dev/input/js%d", id), os.O_RDONLY, 0666)
 
 	if err != nil {

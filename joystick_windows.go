@@ -89,7 +89,7 @@ func mapValue(val, srcMin, srcMax, dstMin, dstMax int64) int64 {
 	return (val-srcMin)*(dstMax-dstMin)/(srcMax-srcMin) + dstMin
 }
 
-func OpenJoystick(id int) (Joystick, error) {
+func Open(id int) (Joystick, error) {
 
 	js := &JoystickImpl{}
 	js.id = id
