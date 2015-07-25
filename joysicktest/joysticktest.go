@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/nsf/termbox-go"
 	"github.com/simulatedsimian/joystick"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -34,18 +36,29 @@ func readJoystick(js joystick.Joystick) error {
 }
 
 func main() {
-	err := termbox.Init()
-	if err != nil {
-		panic(err)
-	}
-	defer termbox.Close()
 
-	js, jserr := joystick.Open(0)
+	jsid := 0
+	if len(os.Args) > 1 {
+		i, err := strconv.Atoi(os.Args[1])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		jsid = i
+	}
+
+	js, jserr := joystick.Open(jsid)
 
 	if jserr != nil {
 		fmt.Println(jserr)
 		return
 	}
+
+	err := termbox.Init()
+	if err != nil {
+		panic(err)
+	}
+	defer termbox.Close()
 
 	eventQueue := make(chan termbox.Event)
 	go func() {
