@@ -81,7 +81,7 @@ type JoystickImpl struct {
 	axisCount   int
 	buttonCount int
 	name        string
-	state       JoystickInfo
+	state       State
 	axisLimits  []axisLimit
 }
 
@@ -156,9 +156,9 @@ func (js *JoystickImpl) Name() string {
 	return js.name
 }
 
-func (js *JoystickImpl) Read() JoystickInfo {
-	js.getJoyPosEx()
-	return js.state
+func (js *JoystickImpl) Read() (State, error) {
+	err := js.getJoyPosEx()
+	return js.state, err
 }
 
 func (js *JoystickImpl) Close() {

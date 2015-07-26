@@ -36,8 +36,9 @@ type JoystickImpl struct {
 	axisCount   int
 	buttonCount int
 	name        string
-	state       JoystickInfo
+	state       State
 	mutex       sync.RWMutex
+	readerr     error
 }
 
 func Open(id int) (Joystick, error) {
@@ -73,14 +74,14 @@ func Open(id int) (Joystick, error) {
 	js.name = string(buffer[:])
 	js.state.AxisData = make([]int, axisCount, axisCount)
 
-	go updateStateFunc(js)
+	go updateState(js)
 
 	return js, nil
 }
 
-func updateStateFunc(js *JoystickImpl) {
+func updateState(js *JoystickImpl) {
 	var err error
-	var ev JSEvent
+	var ev event
 
 	for err == nil {
 		ev, err = js.getEvent()
@@ -100,8 +101,10 @@ func updateStateFunc(js *JoystickImpl) {
 			js.state.AxisData[ev.Number] = int(ev.Value)
 			js.mutex.Unlock()
 		}
-
 	}
+	js.mutex.Lock()
+	js.readerr = err
+	js.mutex.Unlock()
 }
 
 func (js *JoystickImpl) AxisCount() int {
@@ -116,25 +119,25 @@ func (js *JoystickImpl) Name() string {
 	return js.name
 }
 
-func (js *JoystickImpl) Read() JoystickInfo {
+func (js *JoystickImpl) Read() (State, error) {
 	js.mutex.RLock()
-	state := js.state
+	state, err := js.state, js.readerr
 	js.mutex.RUnlock()
-	return state
+	return state, err
 }
 
 func (js *JoystickImpl) Close() {
 	js.file.Close()
 }
 
-type JSEvent struct {
+type event struct {
 	Time   uint32 /* event timestamp in milliseconds */
 	Value  int16  /* value */
 	Type   uint8  /* event type */
 	Number uint8  /* axis/button number */
 }
 
-func (j *JSEvent) String() string {
+func (j *event) String() string {
 	var Type, Number string
 
 	if j.Type&JS_EVENT_INIT > 0 {
@@ -163,8 +166,8 @@ func (j *JSEvent) String() string {
 	return fmt.Sprintf("[Time: %v, Type: %v, Number: %v, Value: %v]", j.Time, Type, Number, j.Value)
 }
 
-func (j *JoystickImpl) getEvent() (JSEvent, error) {
-	var event JSEvent
+func (j *JoystickImpl) getEvent() (event, error) {
+	var ev event
 
 	if j.file == nil {
 		panic("file is nil")
@@ -173,13 +176,13 @@ func (j *JoystickImpl) getEvent() (JSEvent, error) {
 	b := make([]byte, 8)
 	_, err := j.file.Read(b)
 	if err != nil {
-		return JSEvent{}, err
+		return event{}, err
 	}
 
 	data := bytes.NewReader(b)
-	err = binary.Read(data, binary.LittleEndian, &event)
+	err = binary.Read(data, binary.LittleEndian, &ev)
 	if err != nil {
-		return JSEvent{}, err
+		return event{}, err
 	}
-	return event, nil
+	return ev, nil
 }

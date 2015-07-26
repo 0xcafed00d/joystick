@@ -16,8 +16,13 @@ func printAt(x, y int, s string) {
 	}
 }
 
-func readJoystick(js joystick.Joystick) error {
-	jinfo := js.Read()
+func readJoystick(js joystick.Joystick) {
+	jinfo, err := js.Read()
+
+	if err != nil {
+		printAt(1, 5, "Error: "+err.Error())
+		return
+	}
 
 	printAt(1, 5, "Buttons:")
 	for button := 0; button < js.ButtonCount(); button++ {
@@ -32,7 +37,7 @@ func readJoystick(js joystick.Joystick) error {
 		printAt(1, axis+7, fmt.Sprintf("Axis %2d Value: %7d", axis, jinfo.AxisData[axis]))
 	}
 
-	return nil
+	return
 }
 
 func main() {
