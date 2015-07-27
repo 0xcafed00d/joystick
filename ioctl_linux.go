@@ -30,16 +30,16 @@ const (
 	IOC_READ  = 2
 )
 
-func _IOC(dir int, t int, nr int, size int) int {
+func IOC(dir int, t int, nr int, size int) int {
 	return (dir << IOC_DIRSHIFT) | (t << IOC_TYPESHIFT) | (nr << IOC_NRSHIFT) | (size << IOC_SIZESHIFT)
 }
 
-func _IOR(t int, nr int, size int) int {
-	return _IOC(IOC_READ, t, nr, size)
+func IOR(t int, nr int, size int) int {
+	return IOC(IOC_READ, t, nr, size)
 }
 
-func _IOW(t int, nr int, size int) int {
-	return _IOC(IOC_WRITE, t, nr, size)
+func IOW(t int, nr int, size int) int {
+	return IOC(IOC_WRITE, t, nr, size)
 }
 
 func Ioctl(f *os.File, req int, ptr unsafe.Pointer) syscall.Errno {

@@ -13,21 +13,16 @@ import (
 )
 
 const (
-	JS_EVENT_BUTTON uint8 = 0x01 /* button pressed/released */
-	JS_EVENT_AXIS   uint8 = 0x02 /* joystick moved */
-	JS_EVENT_INIT   uint8 = 0x80
-
-	JS_AXIS_X0 uint8 = 0
-	JS_AXIS_Y0 uint8 = 1
-	JS_AXIS_X1 uint8 = 2
-	JS_AXIS_Y1 uint8 = 3
+	_JS_EVENT_BUTTON uint8 = 0x01 /* button pressed/released */
+	_JS_EVENT_AXIS   uint8 = 0x02 /* joystick moved */
+	_JS_EVENT_INIT   uint8 = 0x80
 )
 
 var (
-	JSIOCGAXES    = _IOR('j', 0x11, 1)  /* get number of axes */
-	JSIOCGBUTTONS = _IOR('j', 0x12, 1)  /* get number of buttons */
-	JSIOCGNAME    = func(len int) int { /* get identifier string */
-		return _IOR('j', 0x13, len)
+	_JSIOCGAXES    = IOR('j', 0x11, 1)   /* get number of axes */
+	_JSIOCGBUTTONS = IOR('j', 0x12, 1)   /* get number of buttons */
+	_JSIOCGNAME    = func(len int) int { /* get identifier string */
+		return IOR('j', 0x13, len)
 	}
 )
 
@@ -52,17 +47,17 @@ func Open(id int) (Joystick, error) {
 	var buttCount uint8 = 0
 	var buffer [256]byte
 
-	ioerr := Ioctl(f, JSIOCGAXES, unsafe.Pointer(&axisCount))
+	ioerr := Ioctl(f, _JSIOCGAXES, unsafe.Pointer(&axisCount))
 	if ioerr != 0 {
 		panic(ioerr)
 	}
 
-	ioerr = Ioctl(f, JSIOCGBUTTONS, unsafe.Pointer(&buttCount))
+	ioerr = Ioctl(f, _JSIOCGBUTTONS, unsafe.Pointer(&buttCount))
 	if ioerr != 0 {
 		panic(ioerr)
 	}
 
-	ioerr = Ioctl(f, JSIOCGNAME(len(buffer)-1), unsafe.Pointer(&buffer))
+	ioerr = Ioctl(f, _JSIOCGNAME(len(buffer)-1), unsafe.Pointer(&buffer))
 	if ioerr != 0 {
 		panic(ioerr)
 	}
@@ -86,7 +81,7 @@ func updateState(js *JoystickImpl) {
 	for err == nil {
 		ev, err = js.getEvent()
 
-		if ev.Type&JS_EVENT_BUTTON != 0 {
+		if ev.Type&_JS_EVENT_BUTTON != 0 {
 			js.mutex.Lock()
 			if ev.Value == 0 {
 				js.state.Buttons &= ^(1 << uint(ev.Number))
@@ -96,7 +91,7 @@ func updateState(js *JoystickImpl) {
 			js.mutex.Unlock()
 		}
 
-		if ev.Type&JS_EVENT_AXIS != 0 {
+		if ev.Type&_JS_EVENT_AXIS != 0 {
 			js.mutex.Lock()
 			js.state.AxisData[ev.Number] = int(ev.Value)
 			js.mutex.Unlock()
@@ -140,27 +135,16 @@ type event struct {
 func (j *event) String() string {
 	var Type, Number string
 
-	if j.Type&JS_EVENT_INIT > 0 {
+	if j.Type&_JS_EVENT_INIT > 0 {
 		Type = "Init "
 	}
-	if j.Type&JS_EVENT_BUTTON > 0 {
+	if j.Type&_JS_EVENT_BUTTON > 0 {
 		Type += "Button"
 		Number = strconv.FormatUint(uint64(j.Number), 10)
 	}
-	if j.Type&JS_EVENT_AXIS > 0 {
+	if j.Type&_JS_EVENT_AXIS > 0 {
 		Type = "Axis"
-		switch j.Number {
-		case JS_AXIS_X0:
-			Number = "Axis X0"
-		case JS_AXIS_Y0:
-			Number = "Axis Y0"
-		case JS_AXIS_X1:
-			Number = "Axis X1"
-		case JS_AXIS_Y1:
-			Number = "Axis Y0"
-		default:
-			Number = "Axis " + strconv.FormatUint(uint64(j.Number), 10)
-		}
+		Number = "Axis " + strconv.FormatUint(uint64(j.Number), 10)
 	}
 
 	return fmt.Sprintf("[Time: %v, Type: %v, Number: %v, Value: %v]", j.Time, Type, Number, j.Value)
