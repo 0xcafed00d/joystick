@@ -5,6 +5,7 @@ package joystick
 import (
 	"fmt"
 	"golang.org/x/sys/windows"
+	"math"
 	"unsafe"
 )
 
@@ -13,19 +14,27 @@ const (
 	_MAX_JOYSTICKOEMVXDNAME = 260
 	_MAX_AXIS               = 6
 
-	JOY_RETURNX        = 1
-	JOY_RETURNY        = 2
-	JOY_RETURNZ        = 4
-	JOY_RETURNR        = 8
-	JOY_RETURNU        = 16
-	JOY_RETURNV        = 32
-	JOY_RETURNPOV      = 64
-	JOY_RETURNBUTTONS  = 128
-	JOY_RETURNRAWDATA  = 256
-	JOY_RETURNPOVCTS   = 512
-	JOY_RETURNCENTERED = 1024
-	JOY_USEDEADZONE    = 2048
-	JOY_RETURNALL      = (JOY_RETURNX | JOY_RETURNY | JOY_RETURNZ | JOY_RETURNR | JOY_RETURNU | JOY_RETURNV | JOY_RETURNPOV | JOY_RETURNBUTTONS)
+	_JOY_RETURNX        = 1
+	_JOY_RETURNY        = 2
+	_JOY_RETURNZ        = 4
+	_JOY_RETURNR        = 8
+	_JOY_RETURNU        = 16
+	_JOY_RETURNV        = 32
+	_JOY_RETURNPOV      = 64
+	_JOY_RETURNBUTTONS  = 128
+	_JOY_RETURNRAWDATA  = 256
+	_JOY_RETURNPOVCTS   = 512
+	_JOY_RETURNCENTERED = 1024
+	_JOY_USEDEADZONE    = 2048
+	_JOY_RETURNALL      = (_JOY_RETURNX | _JOY_RETURNY | _JOY_RETURNZ | _JOY_RETURNR | _JOY_RETURNU | _JOY_RETURNV | _JOY_RETURNPOV | _JOY_RETURNBUTTONS)
+
+	_JOYCAPS_HASZ    = 0x1
+	_JOYCAPS_HASR    = 0x2
+	_JOYCAPS_HASU    = 0x4
+	_JOYCAPS_HASV    = 0x8
+	_JOYCAPS_HASPOV  = 0x10
+	_JOYCAPS_POV4DIR = 0x20
+	_JOYCAPS_POVCTS  = 0x40
 )
 
 type JOYCAPS struct {
@@ -77,12 +86,13 @@ type axisLimit struct {
 }
 
 type JoystickImpl struct {
-	id          int
-	axisCount   int
-	buttonCount int
-	name        string
-	state       State
-	axisLimits  []axisLimit
+	id           int
+	axisCount    int
+	povAxisCount int
+	buttonCount  int
+	name         string
+	state        State
+	axisLimits   []axisLimit
 }
 
 func mapValue(val, srcMin, srcMax, dstMin, dstMax int64) int64 {
@@ -111,7 +121,12 @@ func (js *JoystickImpl) getJoyCaps() error {
 		js.axisCount = int(caps.wNumAxes)
 		js.buttonCount = int(caps.wNumButtons)
 		js.name = windows.UTF16ToString(caps.szPname[:])
-		js.state.AxisData = make([]int, caps.wNumAxes, caps.wNumAxes)
+
+		if caps.wCaps&_JOYCAPS_HASPOV != 0 {
+			js.povAxisCount = 2
+		}
+
+		js.state.AxisData = make([]int, js.axisCount+js.povAxisCount)
 
 		js.axisLimits = []axisLimit{
 			{caps.wXmin, caps.wXmax},
@@ -129,23 +144,46 @@ func (js *JoystickImpl) getJoyCaps() error {
 func (js *JoystickImpl) getJoyPosEx() error {
 	var info JOYINFOEX
 	info.dwSize = uint32(unsafe.Sizeof(info))
-	info.dwFlags = JOY_RETURNALL
+	info.dwFlags = _JOY_RETURNALL
 	ret, _, _ := joyGetPosEx.Call(uintptr(js.id), uintptr(unsafe.Pointer(&info)))
 
 	if ret != 0 {
 		return fmt.Errorf("Failed to read Joystick %d", js.id)
 	} else {
 		js.state.Buttons = info.dwButtons
-		for i, _ := range js.state.AxisData {
+
+		for i := 0; i < js.axisCount; i++ {
 			js.state.AxisData[i] = int(mapValue(int64(info.dwAxis[i]),
 				int64(js.axisLimits[i].min), int64(js.axisLimits[i].max), -32767, 32768))
+		}
+
+		if js.povAxisCount > 0 {
+			angleDeg := float64(info.dwPOV) / 100.0
+			angleRad := angleDeg * math.Pi / 180.0
+			sin, cos := math.Sincos(angleRad)
+			switch {
+			case sin < 0:
+				js.state.AxisData[js.axisCount+1] = -32767
+			case sin > 0:
+				js.state.AxisData[js.axisCount+1] = 32768
+			default:
+				js.state.AxisData[js.axisCount+1] = 0
+			}
+			switch {
+			case cos < 0:
+				js.state.AxisData[js.axisCount+2] = -32767
+			case cos > 0:
+				js.state.AxisData[js.axisCount+2] = 32768
+			default:
+				js.state.AxisData[js.axisCount+2] = 0
+			}
 		}
 		return nil
 	}
 }
 
 func (js *JoystickImpl) AxisCount() int {
-	return js.axisCount
+	return js.axisCount + js.povAxisCount
 }
 
 func (js *JoystickImpl) ButtonCount() int {
