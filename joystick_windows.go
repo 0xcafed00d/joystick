@@ -9,6 +9,8 @@ import (
 	"unsafe"
 )
 
+var PrintFunc func(x, y int, s string)
+
 const (
 	_MAXPNAMELEN            = 32
 	_MAX_JOYSTICKOEMVXDNAME = 260
@@ -126,7 +128,7 @@ func (js *JoystickImpl) getJoyCaps() error {
 			js.povAxisCount = 2
 		}
 
-		js.state.AxisData = make([]int, js.axisCount+js.povAxisCount)
+		js.state.AxisData = make([]int, js.axisCount+js.povAxisCount, js.axisCount+js.povAxisCount)
 
 		js.axisLimits = []axisLimit{
 			{caps.wXmin, caps.wXmax},
@@ -159,23 +161,32 @@ func (js *JoystickImpl) getJoyPosEx() error {
 
 		if js.povAxisCount > 0 {
 			angleDeg := float64(info.dwPOV) / 100.0
+			if angleDeg > 359.0 {
+				js.state.AxisData[js.axisCount] = 0
+				js.state.AxisData[js.axisCount+1] = 0
+				return nil
+			}
+
 			angleRad := angleDeg * math.Pi / 180.0
 			sin, cos := math.Sincos(angleRad)
+
+			//PrintFunc(20, 20, fmt.Sprintf("[%v][%v][%v]          ", angleDeg, sin, cos))
+
 			switch {
-			case sin < 0:
-				js.state.AxisData[js.axisCount+1] = -32767
-			case sin > 0:
-				js.state.AxisData[js.axisCount+1] = 32768
+			case sin < -0.01:
+				js.state.AxisData[js.axisCount] = -32767
+			case sin > 0.01:
+				js.state.AxisData[js.axisCount] = 32768
 			default:
-				js.state.AxisData[js.axisCount+1] = 0
+				js.state.AxisData[js.axisCount] = 0
 			}
 			switch {
-			case cos < 0:
-				js.state.AxisData[js.axisCount+2] = -32767
-			case cos > 0:
-				js.state.AxisData[js.axisCount+2] = 32768
+			case cos < -0.01:
+				js.state.AxisData[js.axisCount+1] = 32768
+			case cos > 0.01:
+				js.state.AxisData[js.axisCount+1] = -32767
 			default:
-				js.state.AxisData[js.axisCount+2] = 0
+				js.state.AxisData[js.axisCount+1] = 0
 			}
 		}
 		return nil

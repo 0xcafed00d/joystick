@@ -41,6 +41,7 @@ func readJoystick(js joystick.Joystick) {
 }
 
 func main() {
+	joystick.PrintFunc = printAt
 
 	jsid := 0
 	if len(os.Args) > 1 {
