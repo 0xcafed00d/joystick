@@ -143,6 +143,17 @@ func (js *JoystickImpl) getJoyCaps() error {
 	}
 }
 
+func axisFromPov(povVal float64) int {
+	switch {
+	case povVal < -0.5:
+		return -32767
+	case povVal > 0.5:
+		return 32768
+	default:
+		return 0
+	}
+}
+
 func (js *JoystickImpl) getJoyPosEx() error {
 	var info JOYINFOEX
 	info.dwSize = uint32(unsafe.Sizeof(info))
@@ -170,24 +181,8 @@ func (js *JoystickImpl) getJoyPosEx() error {
 			angleRad := angleDeg * math.Pi / 180.0
 			sin, cos := math.Sincos(angleRad)
 
-			//PrintFunc(20, 20, fmt.Sprintf("[%v][%v][%v]          ", angleDeg, sin, cos))
-
-			switch {
-			case sin < -0.01:
-				js.state.AxisData[js.axisCount] = -32767
-			case sin > 0.01:
-				js.state.AxisData[js.axisCount] = 32768
-			default:
-				js.state.AxisData[js.axisCount] = 0
-			}
-			switch {
-			case cos < -0.01:
-				js.state.AxisData[js.axisCount+1] = 32768
-			case cos > 0.01:
-				js.state.AxisData[js.axisCount+1] = -32767
-			default:
-				js.state.AxisData[js.axisCount+1] = 0
-			}
+			js.state.AxisData[js.axisCount] = axisFromPov(sin)
+			js.state.AxisData[js.axisCount+1] = axisFromPov(-cos)
 		}
 		return nil
 	}
