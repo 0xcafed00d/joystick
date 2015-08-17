@@ -26,7 +26,7 @@ var (
 	}
 )
 
-type JoystickImpl struct {
+type joystickImpl struct {
 	file        *os.File
 	axisCount   int
 	buttonCount int
@@ -62,7 +62,7 @@ func Open(id int) (Joystick, error) {
 		panic(ioerr)
 	}
 
-	js := &JoystickImpl{}
+	js := &joystickImpl{}
 	js.axisCount = int(axisCount)
 	js.buttonCount = int(buttCount)
 	js.file = f
@@ -74,7 +74,7 @@ func Open(id int) (Joystick, error) {
 	return js, nil
 }
 
-func updateState(js *JoystickImpl) {
+func updateState(js *joystickImpl) {
 	var err error
 	var ev event
 
@@ -102,26 +102,26 @@ func updateState(js *JoystickImpl) {
 	js.mutex.Unlock()
 }
 
-func (js *JoystickImpl) AxisCount() int {
+func (js *joystickImpl) AxisCount() int {
 	return js.axisCount
 }
 
-func (js *JoystickImpl) ButtonCount() int {
+func (js *joystickImpl) ButtonCount() int {
 	return js.buttonCount
 }
 
-func (js *JoystickImpl) Name() string {
+func (js *joystickImpl) Name() string {
 	return js.name
 }
 
-func (js *JoystickImpl) Read() (State, error) {
+func (js *joystickImpl) Read() (State, error) {
 	js.mutex.RLock()
 	state, err := js.state, js.readerr
 	js.mutex.RUnlock()
 	return state, err
 }
 
-func (js *JoystickImpl) Close() {
+func (js *joystickImpl) Close() {
 	js.file.Close()
 }
 
@@ -150,7 +150,7 @@ func (j *event) String() string {
 	return fmt.Sprintf("[Time: %v, Type: %v, Number: %v, Value: %v]", j.Time, Type, Number, j.Value)
 }
 
-func (j *JoystickImpl) getEvent() (event, error) {
+func (j *joystickImpl) getEvent() (event, error) {
 	var ev event
 
 	if j.file == nil {

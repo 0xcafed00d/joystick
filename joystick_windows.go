@@ -87,7 +87,7 @@ type axisLimit struct {
 	min, max uint32
 }
 
-type JoystickImpl struct {
+type joystickImpl struct {
 	id           int
 	axisCount    int
 	povAxisCount int
@@ -103,7 +103,7 @@ func mapValue(val, srcMin, srcMax, dstMin, dstMax int64) int64 {
 
 func Open(id int) (Joystick, error) {
 
-	js := &JoystickImpl{}
+	js := &joystickImpl{}
 	js.id = id
 
 	err := js.getJoyCaps()
@@ -113,7 +113,7 @@ func Open(id int) (Joystick, error) {
 	return nil, err
 }
 
-func (js *JoystickImpl) getJoyCaps() error {
+func (js *joystickImpl) getJoyCaps() error {
 	var caps JOYCAPS
 	ret, _, _ := joyGetDevCaps.Call(uintptr(js.id), uintptr(unsafe.Pointer(&caps)), unsafe.Sizeof(caps))
 
@@ -154,7 +154,7 @@ func axisFromPov(povVal float64) int {
 	}
 }
 
-func (js *JoystickImpl) getJoyPosEx() error {
+func (js *joystickImpl) getJoyPosEx() error {
 	var info JOYINFOEX
 	info.dwSize = uint32(unsafe.Sizeof(info))
 	info.dwFlags = _JOY_RETURNALL
@@ -188,23 +188,23 @@ func (js *JoystickImpl) getJoyPosEx() error {
 	}
 }
 
-func (js *JoystickImpl) AxisCount() int {
+func (js *joystickImpl) AxisCount() int {
 	return js.axisCount + js.povAxisCount
 }
 
-func (js *JoystickImpl) ButtonCount() int {
+func (js *joystickImpl) ButtonCount() int {
 	return js.buttonCount
 }
 
-func (js *JoystickImpl) Name() string {
+func (js *joystickImpl) Name() string {
 	return js.name
 }
 
-func (js *JoystickImpl) Read() (State, error) {
+func (js *joystickImpl) Read() (State, error) {
 	err := js.getJoyPosEx()
 	return js.state, err
 }
 
-func (js *JoystickImpl) Close() {
+func (js *joystickImpl) Close() {
 	// no impl under windows
 }
