@@ -19,10 +19,10 @@ const (
 )
 
 var (
-	_JSIOCGAXES    = IOR('j', 0x11, 1)   /* get number of axes */
-	_JSIOCGBUTTONS = IOR('j', 0x12, 1)   /* get number of buttons */
+	_JSIOCGAXES    = _IOR('j', 0x11, 1)  /* get number of axes */
+	_JSIOCGBUTTONS = _IOR('j', 0x12, 1)  /* get number of buttons */
 	_JSIOCGNAME    = func(len int) int { /* get identifier string */
-		return IOR('j', 0x13, len)
+		return _IOR('j', 0x13, len)
 	}
 )
 
@@ -47,17 +47,17 @@ func Open(id int) (Joystick, error) {
 	var buttCount uint8 = 0
 	var buffer [256]byte
 
-	ioerr := Ioctl(f, _JSIOCGAXES, unsafe.Pointer(&axisCount))
+	ioerr := ioctl(f, _JSIOCGAXES, unsafe.Pointer(&axisCount))
 	if ioerr != 0 {
 		panic(ioerr)
 	}
 
-	ioerr = Ioctl(f, _JSIOCGBUTTONS, unsafe.Pointer(&buttCount))
+	ioerr = ioctl(f, _JSIOCGBUTTONS, unsafe.Pointer(&buttCount))
 	if ioerr != 0 {
 		panic(ioerr)
 	}
 
-	ioerr = Ioctl(f, _JSIOCGNAME(len(buffer)-1), unsafe.Pointer(&buffer))
+	ioerr = ioctl(f, _JSIOCGNAME(len(buffer)-1), unsafe.Pointer(&buffer))
 	if ioerr != 0 {
 		panic(ioerr)
 	}
