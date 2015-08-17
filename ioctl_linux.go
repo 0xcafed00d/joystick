@@ -35,11 +35,11 @@ func _IOC(dir int, t int, nr int, size int) int {
 }
 
 func _IOR(t int, nr int, size int) int {
-	return IOC(_IOC_READ, t, nr, size)
+	return _IOC(_IOC_READ, t, nr, size)
 }
 
 func _IOW(t int, nr int, size int) int {
-	return IOC(_IOC_WRITE, t, nr, size)
+	return _IOC(_IOC_WRITE, t, nr, size)
 }
 
 func ioctl(f *os.File, req int, ptr unsafe.Pointer) syscall.Errno {
