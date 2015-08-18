@@ -1,3 +1,6 @@
+// Simple program that displays the state of the specified joystick
+//     go run joysticktest.go 2
+// displays state of joystick id 2
 package main
 
 import (
