@@ -3,25 +3,25 @@
 // Package is pure go and requires no external dependencies
 //
 // Installation:
-//     go get github.com/simulatedsimian/joystick
+//   go get github.com/simulatedsimian/joystick
 //
 // Example:
-//     	js, err := joystick.Open(jsid)
-//		if err != nil {
-//			panic(err)
-//		}
+//   js, err := joystick.Open(jsid)
+//   if err != nil {
+//     panic(err)
+//   }
 //
-//      fmt.Printf("Joystick Name: %s", js.Name())
-//      fmt.Printf("   Axis Count: %d", js.AxisCount())
-//	    fmt.Printf(" Button Count: %d", js.ButtonCount())
+//   fmt.Printf("Joystick Name: %s", js.Name())
+//   fmt.Printf("   Axis Count: %d", js.AxisCount())
+//   fmt.Printf(" Button Count: %d", js.ButtonCount())
 //
-//		state, err := joystick.Read()
-//		if err != nil {
-//			panic(err)
-//		}
+//   state, err := joystick.Read()
+//   if err != nil {
+//      panic(err)
+//   }
 //
-//      fmt.Printf("Axis Data: %v", state.AxisData)
-//		js.Close()
+//   fmt.Printf("Axis Data: %v", state.AxisData)
+//   js.Close()
 //
 package joystick
 
