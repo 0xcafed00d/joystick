@@ -1,7 +1,7 @@
 # joystick
 Go Joystick API
 
-[![GoDoc](https://godoc.org/github.com/SimulatedSimian/joystick?status.svg)](https://godoc.org/github.com/SimulatedSimian/joystick)
+[![GoDoc](https://godoc.org/github.com/SimulatedSimian/joystick?status.svg)](https://godoc.org/github.com/SimulatedSimian/joystick) [![Build Status](https://travis-ci.org/SimulatedSimian/joystick.svg)](https://travis-ci.org/SimulatedSimian/joystick)
 
 Package joystick implements a Polled API to read the state of an attached joystick.
 currently Windows & Linux are supported.
