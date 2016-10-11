@@ -13,7 +13,7 @@ $ go get github.com/simulatedsimian/joystick/...
 ```
 ## Sample Program 
 ```bash
-$ go intstall github.com/simulatedsimian/joystick/joysticktest
+$ go install github.com/simulatedsimian/joystick/joysticktest
 $ joysticktest 0
 ```
 Displays the state of the specified joystick
