@@ -44,6 +44,11 @@ type Joystick interface {
 	// Read returns the current State of the joystick.
 	// On an error condition (for example, joystick has been unplugged) error is not nil
 	Read() (State, error)
+	// Events receives the events read from the joystick input.
+	// If an Event is not consumed before the next Event is ready, then
+	// the new event will be dropped. Events can be used to wait for state changes,
+	// after which the full state can be retrieved with Read.
+	Events() <-chan Event
 	// Close releases this joystick resource
 	Close()
 }

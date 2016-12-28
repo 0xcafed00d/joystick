@@ -34,6 +34,7 @@ type joystickImpl struct {
 	state       State
 	mutex       sync.RWMutex
 	readerr     error
+	events      chan Event
 }
 
 // Open opens the Joystick for reading, with the supplied id
@@ -70,12 +71,16 @@ func Open(id int) (Joystick, error) {
 		panic(ioerr)
 	}
 
-	js := &joystickImpl{}
-	js.axisCount = int(axisCount)
-	js.buttonCount = int(buttCount)
-	js.file = f
-	js.name = string(buffer[:])
-	js.state.AxisData = make([]int, axisCount, axisCount)
+	js := &joystickImpl{
+		axisCount: int(axisCount),
+		buttonCount: int(buttCount),
+		file: f,
+		name: string(buffer[:]),
+		state: State{
+			AxisData: make([]int, axisCount, axisCount),
+		},
+		events: make(chan Event, 1),
+	}
 
 	go updateState(js)
 
@@ -84,10 +89,16 @@ func Open(id int) (Joystick, error) {
 
 func updateState(js *joystickImpl) {
 	var err error
-	var ev event
+	var ev Event
 
 	for err == nil {
 		ev, err = js.getEvent()
+		if err == nil {
+			select {
+			case js.events <- ev:
+			default:
+			}
+		}
 
 		if ev.Type&_JS_EVENT_BUTTON != 0 {
 			js.mutex.Lock()
@@ -129,37 +140,41 @@ func (js *joystickImpl) Read() (State, error) {
 	return state, err
 }
 
+func (js *joystickImpl) Events() <-chan Event {
+	return js.events
+}
+
 func (js *joystickImpl) Close() {
 	js.file.Close()
 }
 
-type event struct {
+type Event struct {
 	Time   uint32 /* event timestamp in milliseconds */
 	Value  int16  /* value */
 	Type   uint8  /* event type */
 	Number uint8  /* axis/button number */
 }
 
-func (j *event) String() string {
+func (e *Event) String() string {
 	var Type, Number string
 
-	if j.Type&_JS_EVENT_INIT > 0 {
+	if e.Type&_JS_EVENT_INIT > 0 {
 		Type = "Init "
 	}
-	if j.Type&_JS_EVENT_BUTTON > 0 {
+	if e.Type&_JS_EVENT_BUTTON > 0 {
 		Type += "Button"
-		Number = strconv.FormatUint(uint64(j.Number), 10)
+		Number = strconv.FormatUint(uint64(e.Number), 10)
 	}
-	if j.Type&_JS_EVENT_AXIS > 0 {
+	if e.Type&_JS_EVENT_AXIS > 0 {
 		Type = "Axis"
-		Number = "Axis " + strconv.FormatUint(uint64(j.Number), 10)
+		Number = "Axis " + strconv.FormatUint(uint64(e.Number), 10)
 	}
 
-	return fmt.Sprintf("[Time: %v, Type: %v, Number: %v, Value: %v]", j.Time, Type, Number, j.Value)
+	return fmt.Sprintf("[Time: %v, Type: %v, Number: %v, Value: %v]", e.Time, Type, Number, e.Value)
 }
 
-func (j *joystickImpl) getEvent() (event, error) {
-	var ev event
+func (j *joystickImpl) getEvent() (Event, error) {
+	var ev Event
 
 	if j.file == nil {
 		panic("file is nil")
@@ -168,13 +183,13 @@ func (j *joystickImpl) getEvent() (event, error) {
 	b := make([]byte, 8)
 	_, err := j.file.Read(b)
 	if err != nil {
-		return event{}, err
+		return Event{}, err
 	}
 
 	data := bytes.NewReader(b)
 	err = binary.Read(data, binary.LittleEndian, &ev)
 	if err != nil {
-		return event{}, err
+		return Event{}, err
 	}
 	return ev, nil
 }
