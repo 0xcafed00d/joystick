@@ -78,6 +78,7 @@ func Open(id int) (Joystick, error) {
 		name: string(buffer[:]),
 		state: State{
 			AxisData: make([]int, axisCount, axisCount),
+			Buttons: make([]bool, buttCount, buttCount),
 		},
 		events: make(chan Event, 1),
 	}
@@ -102,11 +103,7 @@ func updateState(js *joystickImpl) {
 
 		if ev.Type&_JS_EVENT_BUTTON != 0 {
 			js.mutex.Lock()
-			if ev.Value == 0 {
-				js.state.Buttons &= ^(1 << uint(ev.Number))
-			} else {
-				js.state.Buttons |= 1 << ev.Number
-			}
+			js.state.Buttons[ev.Number] = (ev.Value != 0)
 			js.mutex.Unlock()
 		}
 
