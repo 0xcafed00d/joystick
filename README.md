@@ -4,8 +4,10 @@ Go Joystick API
 [![GoDoc](https://godoc.org/github.com/simulatedsimian/joystick?status.svg)](https://godoc.org/github.com/simulatedsimian/joystick) [![Build Status](https://travis-ci.org/simulatedsimian/joystick.svg)](https://travis-ci.org/simulatedsimian/joystick)
 
 Package joystick implements a Polled API to read the state of an attached joystick.
-currently Windows & Linux are supported.
-Package is pure go and requires no external dependencies
+Windows, Linux & OSX are supported.
+Package requires no external dependencies to be installed.
+
+Mac OSX code developed by:  https://github.com/ledyba
 
 ## Installation:
 ```bash
