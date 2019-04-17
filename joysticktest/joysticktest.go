@@ -7,7 +7,7 @@ package main
 import (
 	"fmt"
 	"github.com/nsf/termbox-go"
-	"github.com/simulatedsimian/joystick"
+	"github.com/0xcafed00d/joystick"
 	"os"
 	"strconv"
 	"time"
