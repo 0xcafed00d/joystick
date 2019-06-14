@@ -26,8 +26,10 @@ type joystickManager struct {
 	deviceUsed int
 }
 
-var mgr *joystickManager
-var mgrMutex sync.Mutex
+var (
+	mgr *joystickManager
+	mgrMutex sync.Mutex
+)
 
 func openManager() *joystickManager {
 	if mgr == nil {
@@ -58,6 +60,7 @@ func addCallback(ctx unsafe.Pointer, res C.IOReturn, sender unsafe.Pointer, devi
 	impl := &joystickImpl{
 		id:  id,
 		ref: device,
+		make(chan Event, 1),
 	}
 	mgr.devices[id] = impl
 	C.IOHIDDeviceRegisterRemovalCallback(device, C.IOHIDCallback(C.removeCallback), unsafe.Pointer(impl))
@@ -175,6 +178,7 @@ type joystickImpl struct {
 	axes    []*joystickAxis
 	buttons []*joystickButton
 	state   State
+	events      chan Event
 }
 
 func Open(id int) (Joystick, error) {
@@ -222,15 +226,13 @@ func (js *joystickImpl) Read() (State, error) {
 			js.state.AxisData[idx] = int(float64(value-axe.center)*float64(max-0)/float64(axe.max-axe.center)) + 0
 		}
 	}
-	buttons := uint32(0)
+	buttons := make([]bool, 0, len(js.buttons))
 	for idx, btn := range js.buttons {
 		var valueRef C.IOHIDValueRef
 		if C.IOHIDDeviceGetValue(js.ref, btn.ref, &valueRef) != C.kIOReturnSuccess {
 			continue
 		}
-		if int(C.IOHIDValueGetIntegerValue(valueRef)) > 0 {
-			buttons |= uint32(1) << uint(idx)
-		}
+		buttons[idx] = int(C.IOHIDValueGetIntegerValue(valueRef)) > 0
 	}
 	js.state.Buttons = buttons
 	return js.state, nil
@@ -262,4 +264,8 @@ func (js *joystickImpl) contains(ref C.IOHIDElementRef) bool {
 		}
 	}
 	return false
+}
+
+func (js *joystickImpl) Events() <-chan Event {
+	return js.events
 }

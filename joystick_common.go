@@ -33,6 +33,13 @@ type State struct {
 	Buttons []bool
 }
 
+type Event struct {
+	Time   uint32 /* event timestamp in milliseconds */
+	Value  int16  /* value */
+	Type   uint8  /* event type */
+	Number uint8  /* axis/button number */
+}
+
 // Interface Joystick provides access to the Joystick opened with the Open() function
 type Joystick interface {
 	// AxisCount returns the number of Axis supported by this Joystick

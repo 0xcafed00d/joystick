@@ -150,13 +150,6 @@ func (js *joystickImpl) Close() {
 	js.file.Close()
 }
 
-type Event struct {
-	Time   uint32 /* event timestamp in milliseconds */
-	Value  int16  /* value */
-	Type   uint8  /* event type */
-	Number uint8  /* axis/button number */
-}
-
 func (e *Event) String() string {
 	var Type, Number string
 
