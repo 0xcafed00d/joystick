@@ -5,9 +5,9 @@
 package main
 
 import (
+	joystick ".."
 	"fmt"
 	"github.com/nsf/termbox-go"
-	"github.com/0xcafed00d/joystick"
 	"os"
 	"strconv"
 	"time"
@@ -30,7 +30,7 @@ func readJoystick(js joystick.Joystick) {
 
 	printAt(1, 5, "Buttons:")
 	for button := 0; button < js.ButtonCount(); button++ {
-		if jinfo.Buttons&(1<<uint32(button)) != 0 {
+		if jinfo.Buttons[button] {
 			printAt(10+button, 5, "X")
 		} else {
 			printAt(10+button, 5, ".")

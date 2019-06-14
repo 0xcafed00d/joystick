@@ -53,7 +53,7 @@ func (s State) IsPressed(b ButtonID) bool {
 		}
 	}
 
-	return s.Buttons&(1<<b) != 0
+	return s.Buttons[b]
 }
 
 func (s State) GetAxis(a AxisID) int {
