@@ -60,7 +60,7 @@ func addCallback(ctx unsafe.Pointer, res C.IOReturn, sender unsafe.Pointer, devi
 	impl := &joystickImpl{
 		id:  id,
 		ref: device,
-		make(chan Event, 1),
+		events: make(chan Event, 1),
 	}
 	mgr.devices[id] = impl
 	C.IOHIDDeviceRegisterRemovalCallback(device, C.IOHIDCallback(C.removeCallback), unsafe.Pointer(impl))
