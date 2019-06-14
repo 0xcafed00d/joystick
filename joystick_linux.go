@@ -94,11 +94,16 @@ func updateState(js *joystickImpl) {
 
 	for err == nil {
 		ev, err = js.getEvent()
-		if err == nil {
-			select {
-			case js.events <- ev:
-			default:
-			}
+		if err != nil {
+			close(js.events)
+			js.mutex.Lock()
+			js.readerr = err
+			js.mutex.Unlock()
+			return
+		}
+		select {
+		case js.events <- ev:
+		default:
 		}
 
 		if ev.Type&_JS_EVENT_BUTTON != 0 {
