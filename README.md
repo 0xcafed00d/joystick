@@ -1,7 +1,7 @@
 # joystick
 Go Joystick API
 
-[![GoDoc](https://godoc.org/github.com/simulatedsimian/joystick?status.svg)](https://godoc.org/github.com/simulatedsimian/joystick) [![Build Status](https://travis-ci.org/simulatedsimian/joystick.svg)](https://travis-ci.org/simulatedsimian/joystick)
+[![GoDoc](https://godoc.org/github.com/0xcafed00d/joystick?status.svg)](https://godoc.org/github.com/0xcafed00d/joystick) [![Build Status](https://travis-ci.org/0xcafed00d/joystick.svg)](https://travis-ci.org/0xcafed00d/joystick)
 
 Package joystick implements a Polled API to read the state of an attached joystick.
 Windows, Linux & OSX are supported.
@@ -11,17 +11,17 @@ Mac OSX code developed by:  https://github.com/ledyba
 
 ## Installation:
 ```bash
-$ go get github.com/simulatedsimian/joystick/...
+$ go get github.com/0xcafed00d/joystick/...
 ```
 ## Sample Program 
 ```bash
-$ go install github.com/simulatedsimian/joystick/joysticktest
+$ go install github.com/0xcafed00d/joystick/joysticktest
 $ joysticktest 0
 ```
 Displays the state of the specified joystick
 ## Example:
 ```go
-import "github.com/simulatedsimian/joystick"
+import "github.com/0xcafed00d/joystick"
 ```
 ```go
 js, err := joystick.Open(jsid)
