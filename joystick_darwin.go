@@ -216,11 +216,15 @@ func (js *joystickImpl) Read() (State, error) {
 		if axe.center < 0 {
 			axe.center = value
 			js.state.AxisData[idx] = 0
-		} else if value < axe.center {
-			js.state.AxisData[idx] = int(float64(value-axe.min)*float64(0-min)/float64(axe.center-axe.min)) + min
+        } else if axe.center != int(0.5+float64(axe.max-axe.min)/2.0) {
+            js.state.AxisData[idx] = int(float64(value-axe.min)*float64(max-min)/float64(axe.max-axe.min)) + min
 		} else {
-			js.state.AxisData[idx] = int(float64(value-axe.center)*float64(max-0)/float64(axe.max-axe.center)) + 0
-		}
+            if value < axe.center {
+                js.state.AxisData[idx] = int(float64(value-axe.min)*float64(0-min)/float64(axe.center-axe.min)) + min
+            } else {
+                js.state.AxisData[idx] = int(float64(value-axe.center)*float64(max-0)/float64(axe.max-axe.center)) + 0
+            }
+        }
 	}
 	buttons := uint32(0)
 	for idx, btn := range js.buttons {
