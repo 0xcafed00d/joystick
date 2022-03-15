@@ -260,7 +260,7 @@ func (js *joystickImpl) Read() (State, error) {
 		} else if value < 4 {
 			js.state.AxisData[stateIdxX] = 32768
 		} else {
-			js.state.AxisData[stateIdxX] = -32768
+			js.state.AxisData[stateIdxX] = -32767
 		}
 
 		if value == 2 || value == 6 {
@@ -268,7 +268,7 @@ func (js *joystickImpl) Read() (State, error) {
 		} else if value > 2 && value < 6 {
 			js.state.AxisData[stateIdxY] = 32768
 		} else {
-			js.state.AxisData[stateIdxY] = -32768
+			js.state.AxisData[stateIdxY] = -32767
 		}
 	}
 	buttons := uint32(0)
