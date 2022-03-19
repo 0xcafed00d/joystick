@@ -111,6 +111,14 @@ func (js *joystickImpl) addElements(elems C.CFArrayRef) {
 						center: -1,
 					})
 					js.state.AxisData = append(js.state.AxisData, 0)
+				case C.kHIDUsage_GD_Hatswitch:
+					if js.contains(elem) {
+						continue
+					}
+					js.hats = append(js.hats, &joystickHat{
+						ref: elem,
+					})
+					js.state.AxisData = append(js.state.AxisData, 0, 0)
 				}
 			case C.kHIDPage_Button:
 				if js.contains(elem) {
@@ -166,6 +174,10 @@ type joystickButton struct {
 	ref C.IOHIDElementRef
 }
 
+type joystickHat struct {
+	ref C.IOHIDElementRef
+}
+
 // -- impl
 
 type joystickImpl struct {
@@ -173,6 +185,7 @@ type joystickImpl struct {
 	ref     C.IOHIDDeviceRef
 	removed bool
 	axes    []*joystickAxis
+	hats    []*joystickHat
 	buttons []*joystickButton
 	state   State
 }
@@ -193,7 +206,7 @@ func Open(id int) (Joystick, error) {
 }
 
 func (js *joystickImpl) AxisCount() int {
-	return len(js.axes)
+	return len(js.axes) + len(js.hats)*2
 }
 
 func (js *joystickImpl) ButtonCount() int {
@@ -216,15 +229,47 @@ func (js *joystickImpl) Read() (State, error) {
 		if axe.center < 0 {
 			axe.center = value
 			js.state.AxisData[idx] = 0
-        } else if axe.center != int(0.5+float64(axe.max-axe.min)/2.0) {
-            js.state.AxisData[idx] = int(float64(value-axe.min)*float64(max-min)/float64(axe.max-axe.min)) + min
+		} else if axe.center != int(0.5+float64(axe.max-axe.min)/2.0) {
+			js.state.AxisData[idx] = int(float64(value-axe.min)*float64(max-min)/float64(axe.max-axe.min)) + min
 		} else {
-            if value < axe.center {
-                js.state.AxisData[idx] = int(float64(value-axe.min)*float64(0-min)/float64(axe.center-axe.min)) + min
-            } else {
-                js.state.AxisData[idx] = int(float64(value-axe.center)*float64(max-0)/float64(axe.max-axe.center)) + 0
-            }
-        }
+			if value < axe.center {
+				js.state.AxisData[idx] = int(float64(value-axe.min)*float64(0-min)/float64(axe.center-axe.min)) + min
+			} else {
+				js.state.AxisData[idx] = int(float64(value-axe.center)*float64(max-0)/float64(axe.max-axe.center)) + 0
+			}
+		}
+	}
+	for idx, hat := range js.hats {
+		stateIdxX := len(js.axes) + idx*2
+		stateIdxY := len(js.axes) + idx*2 + 1
+
+		var valueRef C.IOHIDValueRef
+		if C.IOHIDDeviceGetValue(js.ref, hat.ref, &valueRef) != C.kIOReturnSuccess {
+			continue
+		}
+
+		value := int(int(C.IOHIDValueGetIntegerValue(valueRef)))
+
+		if value == 8 {
+			js.state.AxisData[stateIdxX] = 0
+			js.state.AxisData[stateIdxY] = 0
+			continue
+		}
+		if value == 0 || value == 4 {
+			js.state.AxisData[stateIdxX] = 0
+		} else if value < 4 {
+			js.state.AxisData[stateIdxX] = 32768
+		} else {
+			js.state.AxisData[stateIdxX] = -32767
+		}
+
+		if value == 2 || value == 6 {
+			js.state.AxisData[stateIdxY] = 0
+		} else if value > 2 && value < 6 {
+			js.state.AxisData[stateIdxY] = 32768
+		} else {
+			js.state.AxisData[stateIdxY] = -32767
+		}
 	}
 	buttons := uint32(0)
 	for idx, btn := range js.buttons {
@@ -256,6 +301,11 @@ func (js *joystickImpl) Close() {
 
 func (js *joystickImpl) contains(ref C.IOHIDElementRef) bool {
 	for _, elem := range js.axes {
+		if elem.ref == ref {
+			return true
+		}
+	}
+	for _, elem := range js.hats {
 		if elem.ref == ref {
 			return true
 		}
