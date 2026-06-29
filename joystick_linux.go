@@ -122,11 +122,13 @@ func (js *joystickImpl) Name() string {
 	return js.name
 }
 
-func (js *joystickImpl) Read() (State, error) {
+func (js *joystickImpl) Read() (s State, err error) {
 	js.mutex.RLock()
-	state, err := js.state, js.readerr
+	s.AxisData = append([]int{}, js.state.AxisData...)
+	s.Buttons = js.state.Buttons
+	err = js.readerr
 	js.mutex.RUnlock()
-	return state, err
+	return
 }
 
 func (js *joystickImpl) Close() {
