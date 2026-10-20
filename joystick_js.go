@@ -7,52 +7,67 @@ import (
 	"syscall/js"
 )
 
-var navigator js.Value
-
-func init() {
-	navigator = js.Global().Get("navigator")
-	if !navigator.Truthy() {
-		panic("Gamepad API unsupported on this platform")
-	}
-}
-
 type gamePad struct {
 	id int
 }
 
-func (g *gamePad) AxisCount() int {
-	gamepad := navigator.Call("getGamepads").Index(g.id)
-	if !gamepad.Truthy() {
+func (g *gamePad) AxisCount() (count int) {
+	gamepad, err := getGamepad(g.id)
+	if err != nil {
 		return 0
 	}
-	axes := gamepad.Get("axes")
-	return axes.Length()
+	defer (func() {
+		if r := recover(); r != nil {
+			_, ok := r.(js.Error)
+			if ok {
+				count = 0
+			}
+		}
+	})()
+	return gamepad.Get("axes").Length()
 }
 
-func (g *gamePad) ButtonCount() int {
-	gamepad := navigator.Call("getGamepads").Index(g.id)
-	if !gamepad.Truthy() {
+func (g *gamePad) ButtonCount() (count int) {
+	gamepad, err := getGamepad(g.id)
+	if err != nil {
 		return 0
 	}
-	buttons := gamepad.Get("buttons")
-	return buttons.Length()
+	defer (func() {
+		if r := recover(); r != nil {
+			count = 0
+		}
+	})()
+	return gamepad.Get("buttons").Length()
 }
 
 func (g *gamePad) Close() {}
 
-func (g *gamePad) Name() string {
-	gamepad := navigator.Call("getGamepads").Index(g.id)
-	if !gamepad.Truthy() {
+func (g *gamePad) Name() (name string) {
+	gamepad, err := getGamepad(g.id)
+	if err != nil {
 		return ""
 	}
+	defer (func() {
+		if r := recover(); r != nil {
+			name = ""
+		}
+	})()
 	return gamepad.Get("id").String()
 }
 
 func (g *gamePad) Read() (State, error) {
-	gamepad := navigator.Call("getGamepads").Index(g.id)
-	if !gamepad.Truthy() {
-		return State{}, fmt.Errorf("gamepad not found")
+	gamepad, err := getGamepad(g.id)
+	if err != nil {
+		return State{}, err
 	}
+	defer (func() {
+		if r := recover(); r != nil {
+			jsErr, ok := r.(js.Error)
+			if ok {
+				err = jsErr
+			}
+		}
+	})()
 	axes := gamepad.Get("axes")
 	buttons := gamepad.Get("buttons")
 
@@ -75,11 +90,35 @@ func (g *gamePad) Read() (State, error) {
 }
 
 func Open(id int) (Joystick, error) {
-	gamepad := navigator.Call("getGamepads").Index(id)
-	if !gamepad.Truthy() {
-		return nil, fmt.Errorf("gamepad not found")
+	_, err := getGamepad(id)
+	if err != nil {
+		return nil, err
 	}
 	return &gamePad{id: id}, nil
+}
+
+func getGamepad(id int) (gp js.Value, err error) {
+	defer (func() {
+		if r := recover(); r != nil {
+			jsErr, ok := r.(js.Error)
+			if ok {
+				err = jsErr
+			}
+		}
+	})()
+	navigator := js.Global().Get("navigator")
+	if !navigator.Truthy() {
+		return js.Value{}, fmt.Errorf("navigator not found")
+	}
+	gamepads := navigator.Call("getGamepads")
+	if !gamepads.Truthy() {
+		return js.Value{}, fmt.Errorf("gamepads not found")
+	}
+	gamepad := gamepads.Index(id)
+	if !gamepad.Truthy() {
+		return js.Value{}, fmt.Errorf("gamepad not found")
+	}
+	return gamepad, nil
 }
 
 func scaleAxis(value float64) int {
