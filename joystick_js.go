@@ -66,7 +66,9 @@ func (g *gamePad) Read() (State, error) {
 	}
 
 	for i := 0; i < buttons.Length(); i++ {
-		state.Buttons |= uint32(buttons.Index(i).Get("value").Int() << i)
+		if buttons.Index(i).Get("pressed").Bool() {
+			state.Buttons |= 1 << i
+		}
 	}
 
 	return state, nil
