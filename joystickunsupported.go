@@ -1,4 +1,4 @@
-//go:build !linux && !windows && !darwin && !js && !wasm
+//go:build !linux && !windows && !darwin && !js
 
 package joystick
 
